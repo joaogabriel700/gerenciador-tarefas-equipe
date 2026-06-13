@@ -150,6 +150,16 @@ export default function App() {
 
   const concluidas = tasks.filter(t => t.status === 'Concluído').length;
 
+  // Cálculos para o painel de carga de trabalho
+  const cargasPorUsuario = mockUsers.map(user => {
+    const tarefasUser = tasks.filter(t => t.assigneeId === user.id && t.status !== 'Concluído');
+    const totalHoras = tarefasUser.reduce((acc, t) => acc + ((t as any).estimatedHours || 0), 0);
+    return { user, tarefasUser, totalHoras };
+  });
+
+  const mediaGeralHoras = cargasPorUsuario.reduce((acc, item) => acc + item.totalHoras, 0) / mockUsers.length || 0;
+  const cargasRankeadas = [...cargasPorUsuario].sort((a, b) => b.totalHoras - a.totalHoras);
+
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6', padding: '32px', fontFamily: 'sans-serif' }}>
 
@@ -461,25 +471,56 @@ export default function App() {
           </div>
         </div>
       ) : (
-        /* VISUALIZAÇÃO DE CARGA DE TRABALHO POR FUNCIONÁRIO */
+        /* VISUALIZAÇÃO DE CARGA DE TRABALHO POR FUNCIONÁRIO RANKEADA E COM FAIXAS COLORIDAS */
         <div style={{ backgroundColor: '#ffffff', padding: '32px', borderRadius: '12px', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)', border: '1px solid #d1d5db', maxWidth: '800px', margin: '0 auto' }}>
           <h2 style={{ fontSize: '1.125rem', fontWeight: '700', color: '#1f2937', marginBottom: '24px', borderBottom: '1px solid #e5e7eb', paddingBottom: '12px' }}>Carga de Trabalho (Horas Previstas por Colaborador)</h2>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            {mockUsers.map(user => {
-              const tarefasUser = tasks.filter(t => t.assigneeId === user.id && t.status !== 'Concluído');
-              const totalHoras = tarefasUser.reduce((acc, t) => acc + ((t as any).estimatedHours || 0), 0);
+            {cargasRankeadas.map(item => {
+              // Definir a faixa de carga (comparado à média geral)
+              // Vermelho: > 125% da média, Verde: < 75% da média, Amarelo: Normal
+              let faixaBorda = '#e5e7eb';
+              let faixaFundo = '#f9fafb';
+              let faixaTexto = '#4b5563';
+              let indicadorTexto = 'Carga Equilibrada';
+
+              if (mediaGeralHoras > 0) {
+                const percentual = item.totalHoras / mediaGeralHoras;
+                if (percentual > 1.25) {
+                  faixaBorda = '#fca5a5';
+                  faixaFundo = '#fef2f2';
+                  faixaTexto = '#991b1b';
+                  indicadorTexto = '⚠️ Acima da média (Alta Carga)';
+                } else if (percentual < 0.75) {
+                  faixaBorda = '#86efac';
+                  faixaFundo = '#f0fdf4';
+                  faixaTexto = '#14532d';
+                  indicadorTexto = '🟢 Abaixo da média (Baixa Carga)';
+                } else {
+                  faixaBorda = '#fde047';
+                  faixaFundo = '#feffe0';
+                  faixaTexto = '#713f12';
+                  indicadorTexto = '🟡 Na média (Carga Normal)';
+                }
+              }
 
               return (
-                <div key={user.id} style={{ border: '1px solid #e5e7eb', padding: '16px', borderRadius: '8px', backgroundColor: '#f9fafb' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontWeight: '600', fontSize: '0.875rem' }}>
-                    <span>{user.name}</span>
-                    <span>Total: {totalHoras} Horas</span>
+                <div key={item.user.id} style={{ border: '2px solid', borderColor: faixaBorda, padding: '16px', borderRadius: '10px', backgroundColor: faixaFundo, transition: 'all 0.3s' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontWeight: '700', fontSize: '0.975rem', color: '#111827' }}>
+                    <span>{item.user.name}</span>
+                    <span>Total: {item.totalHoras} Horas</span>
                   </div>
 
-                  {tarefasUser.length > 0 ? (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '0.6875rem', fontWeight: '600', padding: '4px 8px', borderRadius: '9999px', backgroundColor: faixaBorda, color: faixaTexto }}>
+                      {indicadorTexto}
+                    </span>
+                    <span style={{ fontSize: '0.6875rem', color: '#6b7280' }}>Média da equipe: {Math.round(mediaGeralHoras)}h</span>
+                  </div>
+
+                  {item.tarefasUser.length > 0 ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '150px', overflowY: 'auto' }}>
-                      {tarefasUser.map(t => (
+                      {item.tarefasUser.map(t => (
                         <div 
                           key={t.id} 
                           onClick={() => abrirParaEditar(t)}
