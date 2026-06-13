@@ -148,7 +148,10 @@ export default function App() {
     ? `${getUserName(idMaisSobrecargado)} (${contagemSobrecarga[idMaisSobrecargado]} tarefas)`
     : 'Nenhuma';
 
-  const concluidas = tasks.filter(t => t.status === 'Concluído').length;
+  // Métricas baseadas em Horas (Esforço)
+  const totalHorasGeral = tasks.reduce((acc, t) => acc + ((t as any).estimatedHours || 0), 0);
+  const totalHorasConcluidas = tasks.filter(t => t.status === 'Concluído').reduce((acc, t) => acc + ((t as any).estimatedHours || 0), 0);
+  const percentualProdutividade = totalHorasGeral > 0 ? Math.round((totalHorasConcluidas / totalHorasGeral) * 100) : 0;
 
   // Cálculos para o painel de carga de trabalho
   const cargasPorUsuario = mockUsers.map(user => {
@@ -214,10 +217,12 @@ export default function App() {
           <p style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1f2937', marginTop: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sobrecargaTexto}</p>
           <p style={{ fontSize: '0.75rem', color: '#ca8a04', marginTop: '4px' }}>Funcionário mais demandado</p>
         </div>
+        
+        {/* CARD DE PRODUTIVIDADE ALTERADO PARA PORCENTAGEM */}
         <div style={{ backgroundColor: '#ffffff', padding: '24px', borderRadius: '8px', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)', borderLeft: '4px solid #22c55e' }}>
-          <h3 style={{ color: '#6b7280', fontSize: '0.875rem', fontWeight: '500' }}>Produtividade (Concluídas)</h3>
-          <p style={{ fontSize: '1.875rem', fontWeight: '700', color: '#1f2937', marginTop: '8px' }}>{concluidas} / {tasks.length}</p>
-          <p style={{ fontSize: '0.75rem', color: '#22c55e', marginTop: '4px' }}>Progresso geral do time</p>
+          <h3 style={{ color: '#6b7280', fontSize: '0.875rem', fontWeight: '500' }}>Produtividade (Horas Concluídas)</h3>
+          <p style={{ fontSize: '1.875rem', fontWeight: '700', color: '#1f2937', marginTop: '8px' }}>{percentualProdutividade}%</p>
+          <p style={{ fontSize: '0.75rem', color: '#22c55e', marginTop: '4px' }}>Progresso geral de esforço do time</p>
         </div>
       </div>
 
@@ -260,16 +265,16 @@ export default function App() {
 
       {/* MODOS DE VISUALIZAÇÃO */}
       {modoVisao === 'quadro' ? (
-        /* KANBAN TRADICIONAL */
-        <div style={{ display: 'flex', gap: '24px', overflowX: 'auto', paddingBottom: '4px' }}>
+        /* KANBAN HORIZONTAL - CATEGORIAS LADO A LADO */
+        <div style={{ display: 'flex', gap: '24px', overflowX: 'auto', paddingBottom: '24px', alignItems: 'flex-start' }}>
           {colunas.map((coluna) => (
             <div
               key={coluna}
-              style={{ backgroundColor: '#e5e7eb', padding: '16px', borderRadius: '8px', minWidth: '300px', width: '300px', display: 'flex', flexDirection: 'column', maxHeight: '600px' }}
+              style={{ backgroundColor: '#e5e7eb', padding: '16px', borderRadius: '8px', minWidth: '300px', width: '300px', display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '600px', overflowY: 'auto' }}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, coluna)}
             >
-              <h2 style={{ fontWeight: '700', fontSize: '1.125rem', marginBottom: '16px', color: '#374151', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ fontWeight: '700', fontSize: '1.125rem', color: '#374151', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #cbd5e1', paddingBottom: '8px' }}>
                 {coluna}
                 <span style={{ backgroundColor: '#9ca3af', color: '#ffffff', fontSize: '0.75rem', padding: '4px 8px', borderRadius: '9999px' }}>
                   {tasks
@@ -281,7 +286,7 @@ export default function App() {
                 </span>
               </h2>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', paddingRight: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {tasks
                   .filter((task) => task.status === coluna)
                   .filter(task => task.title.toLowerCase().includes(buscaTitulo.toLowerCase()))
@@ -308,10 +313,6 @@ export default function App() {
                           ⚠️ Bloqueia {task.blocksTasks.length} tarefa(s)
                         </div>
                       )}
-
-                      <div style={{ marginTop: '8px', fontSize: '0.75rem', color: '#4b5563' }}>
-                        <strong>Tempo Previsto:</strong> {task.estimatedHours || 0}h
-                      </div>
 
                       <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', fontWeight: '500', color: '#9ca3af' }}>
                         <span style={{ backgroundColor: '#f3f4f6', padding: '4px 8px', borderRadius: '4px' }}>
@@ -471,14 +472,14 @@ export default function App() {
           </div>
         </div>
       ) : (
-        /* VISUALIZAÇÃO DE CARGA DE TRABALHO POR FUNCIONÁRIO RANKEADA E COM FAIXAS COLORIDAS */
+        /* VISUALIZAÇÃO DE CARGA DE TRABALHO RANKEADA E COM FAIXAS DE ALERTA */
         <div style={{ backgroundColor: '#ffffff', padding: '32px', borderRadius: '12px', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)', border: '1px solid #d1d5db', maxWidth: '800px', margin: '0 auto' }}>
           <h2 style={{ fontSize: '1.125rem', fontWeight: '700', color: '#1f2937', marginBottom: '24px', borderBottom: '1px solid #e5e7eb', paddingBottom: '12px' }}>Carga de Trabalho (Horas Previstas por Colaborador)</h2>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {cargasRankeadas.map(item => {
-              // Definir a faixa de carga (comparado à média geral)
-              // Vermelho: > 125% da média, Verde: < 75% da média, Amarelo: Normal
+              // Comparação com a média geral:
+              // Vermelho: > 125%, Verde: < 75%, Amarelo: Normal
               let faixaBorda = '#e5e7eb';
               let faixaFundo = '#f9fafb';
               let faixaTexto = '#4b5563';
@@ -490,17 +491,17 @@ export default function App() {
                   faixaBorda = '#fca5a5';
                   faixaFundo = '#fef2f2';
                   faixaTexto = '#991b1b';
-                  indicadorTexto = '⚠️ Acima da média (Alta Carga)';
+                  indicadorTexto = '🔴 Muita carga de trabalho (Acima da média)';
                 } else if (percentual < 0.75) {
                   faixaBorda = '#86efac';
                   faixaFundo = '#f0fdf4';
                   faixaTexto = '#14532d';
-                  indicadorTexto = '🟢 Abaixo da média (Baixa Carga)';
+                  indicadorTexto = '🟢 Pouca carga de trabalho (Abaixo da média)';
                 } else {
                   faixaBorda = '#fde047';
                   faixaFundo = '#feffe0';
                   faixaTexto = '#713f12';
-                  indicadorTexto = '🟡 Na média (Carga Normal)';
+                  indicadorTexto = '🟡 Carga de trabalho normal';
                 }
               }
 
@@ -508,14 +509,14 @@ export default function App() {
                 <div key={item.user.id} style={{ border: '2px solid', borderColor: faixaBorda, padding: '16px', borderRadius: '10px', backgroundColor: faixaFundo, transition: 'all 0.3s' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontWeight: '700', fontSize: '0.975rem', color: '#111827' }}>
                     <span>{item.user.name}</span>
-                    <span>Total: {item.totalHoras} Horas</span>
+                    <span>Total: {item.totalHoras}</span>
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                     <span style={{ fontSize: '0.6875rem', fontWeight: '600', padding: '4px 8px', borderRadius: '9999px', backgroundColor: faixaBorda, color: faixaTexto }}>
                       {indicadorTexto}
                     </span>
-                    <span style={{ fontSize: '0.6875rem', color: '#6b7280' }}>Média da equipe: {Math.round(mediaGeralHoras)}h</span>
+                    <span style={{ fontSize: '0.6875rem', color: '#6b7280' }}>Média da equipe: {Math.round(mediaGeralHoras)}</span>
                   </div>
 
                   {item.tarefasUser.length > 0 ? (
@@ -527,7 +528,7 @@ export default function App() {
                           style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '0.75rem', cursor: 'pointer' }}
                         >
                           <span style={{ fontWeight: '500' }}>{t.title}</span>
-                          <span style={{ color: '#2563eb', fontWeight: '700' }}>{(t as any).estimatedHours || 0}h</span>
+                          <span style={{ color: '#2563eb', fontWeight: '700' }}>{(t as any).estimatedHours || 0}</span>
                         </div>
                       ))}
                     </div>
@@ -714,7 +715,7 @@ export default function App() {
                   <select
                     style={{ marginTop: '4px', width: '100%', borderRadius: '6px', border: '1px solid #d1d5db', padding: '8px', fontSize: '0.875rem', backgroundColor: '#ffffff', outline: 'none' }}
                     value={novaTarefa.priority || 'Média'}
-                    onChange={e => setNovaTarefa({ ...novaTarefa, priority: e.target.value as Priority })}
+                    onChange={e => setNovaTarefa({ ...TarefaEditandoObj(tarefaEditando), priority: e.target.value as Priority } as any)}
                   >
                     <option value="Baixa">Baixa</option>
                     <option value="Média">Média</option>
@@ -745,4 +746,8 @@ export default function App() {
 
     </div>
   );
+}
+
+function TarefaEditandoObj(val: any) {
+  return val || {};
 }
