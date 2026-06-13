@@ -24,14 +24,14 @@ export default function App() {
   const [tarefaEditando, setTarefaEditando] = useState<Task | null>(null);
 
   const [novaTarefa, setNovaTarefa] = useState<Partial<Task>>({
-    title: '', description: '', status: 'A Fazer', assigneeId: '1', deadline: '', priority: 'Média', blocksTasks: []
-  });
+    title: '', description: '', status: 'A Fazer', assigneeId: '1', deadline: '', priority: 'Média', blocksTasks: [], estimatedHours: 0
+  } as any);
 
+  // ESTADOS DE BUSCA, FILTROS E MODO DE VISUALIZAÇÃO
   const [buscaTitulo, setBuscaTitulo] = useState('');
   const [filtroPrioridade, setFiltroPrioridade] = useState('Todas');
   const [filtroResponsavel, setFiltroResponsavel] = useState('Todos');
-  
-  const [modoVisao, setModoVisao] = useState<'quadro' | 'arvore'>('quadro');
+  const [modoVisao, setModoVisao] = useState<'quadro' | 'arvore' | 'carga'>('quadro');
 
   const colunas: Status[] = ['A Fazer', 'Em Andamento', 'Revisão', 'Concluído'];
 
@@ -43,7 +43,7 @@ export default function App() {
   const fecharModal = () => {
     setIsModalOpen(false);
     setTarefaEditando(null);
-    setNovaTarefa({ title: '', description: '', status: 'A Fazer', assigneeId: '1', deadline: '', priority: 'Média', blocksTasks: [] });
+    setNovaTarefa({ title: '', description: '', status: 'A Fazer', assigneeId: '1', deadline: '', priority: 'Média', blocksTasks: [], estimatedHours: 0 } as any);
   };
 
   const salvarTarefa = (e: React.FormEvent) => {
@@ -52,7 +52,7 @@ export default function App() {
     if (tarefaEditando) {
       setTasks(prev => prev.map(task => 
         task.id === tarefaEditando.id 
-          ? { ...task, ...novaTarefa, blocksTasks: novaTarefa.blocksTasks || [] } as Task 
+          ? { ...task, ...novaTarefa, blocksTasks: novaTarefa.blocksTasks || [], estimatedHours: (novaTarefa as any).estimatedHours || 0 } as Task 
           : task
       ));
     } else {
@@ -65,6 +65,7 @@ export default function App() {
         deadline: novaTarefa.deadline || '',
         priority: novaTarefa.priority as Priority,
         blocksTasks: novaTarefa.blocksTasks || [],
+        estimatedHours: (novaTarefa as any).estimatedHours || 0,
       };
       setTasks(prev => [...prev, tarefaCriada]);
     }
@@ -74,7 +75,7 @@ export default function App() {
 
   const abrirParaCriar = () => {
     setTarefaEditando(null);
-    setNovaTarefa({ title: '', description: '', status: 'A Fazer', assigneeId: '1', deadline: '', priority: 'Média', blocksTasks: [] });
+    setNovaTarefa({ title: '', description: '', status: 'A Fazer', assigneeId: '1', deadline: '', priority: 'Média', blocksTasks: [], estimatedHours: 0 } as any);
     setIsModalOpen(true);
   };
 
@@ -87,6 +88,7 @@ export default function App() {
   const handleDragStart = (e: React.DragEvent, taskId: string) => e.dataTransfer.setData('taskId', taskId);
   const handleDragOver = (e: React.DragEvent) => e.preventDefault();
 
+  // LÓGICA DE DRAG & DROP COM VALIDAÇÃO DE BLOQUEIO DE TAREFAS
   const handleDrop = (e: React.DragEvent, novaColuna: Status) => {
     const idDaTarefa = e.dataTransfer.getData('taskId');
     const tarefaMovida = tasks.find(t => t.id === idDaTarefa);
@@ -104,6 +106,7 @@ export default function App() {
     let violacao = false;
     let mensagemViolacao = '';
 
+    // Verifica se a tarefa atual depende de outra que ainda não avançou
     const tarefasBloqueadoras = tasks.filter(t => t.blocksTasks && t.blocksTasks.includes(tarefaMovida.id));
     
     for (const bloq of tarefasBloqueadoras) {
@@ -117,9 +120,10 @@ export default function App() {
 
     if (violacao) {
       alert(mensagemViolacao);
-      return;
+      return; // Cancela a atualização de estado, mantendo o card na coluna original
     }
 
+    // Executa a movimentação normalmente caso passe na validação
     setTasks(prev => prev.map(task => task.id === idDaTarefa ? { ...task, status: novaColuna } : task));
   };
 
@@ -130,6 +134,7 @@ export default function App() {
     }
   };
 
+  // Métrica dos cards superiores
   const tarefasCriticas = tasks.filter(t => t.priority === 'Alta' && t.status !== 'Concluído').length;
   const tarefasAtivas = tasks.filter(t => t.status !== 'Concluído');
   const contagemSobrecarga = tarefasAtivas.reduce((acc, task) => {
@@ -154,9 +159,9 @@ export default function App() {
           <h1 style={{ fontSize: '1.875rem', fontWeight: '700', color: '#1f2937' }}>Quadro de Atividades</h1>
           <p style={{ color: '#4b5563', marginTop: '4px' }}>Gestão de produtividade e gargalos</p>
         </div>
-        
+
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-          {/* Alternância de Visualização */}
+          {/* Botões de alternância de visualização */}
           <div style={{ display: 'flex', backgroundColor: '#e5e7eb', padding: '4px', borderRadius: '8px' }}>
             <button
               onClick={() => setModoVisao('quadro')}
@@ -169,6 +174,12 @@ export default function App() {
               style={{ padding: '8px 16px', borderRadius: '6px', fontSize: '0.875rem', fontWeight: '500', cursor: 'pointer', border: 'none', transition: 'all 0.2s', backgroundColor: modoVisao === 'arvore' ? '#ffffff' : 'transparent', boxShadow: modoVisao === 'arvore' ? '0 1px 2px 0 rgba(0, 0, 0, 0.05)' : 'none', color: modoVisao === 'arvore' ? '#1f2937' : '#4b5563' }}
             >
               Árvore
+            </button>
+            <button
+              onClick={() => setModoVisao('carga')}
+              style={{ padding: '8px 16px', borderRadius: '6px', fontSize: '0.875rem', fontWeight: '500', cursor: 'pointer', border: 'none', transition: 'all 0.2s', backgroundColor: modoVisao === 'carga' ? '#ffffff' : 'transparent', boxShadow: modoVisao === 'carga' ? '0 1px 2px 0 rgba(0, 0, 0, 0.05)' : 'none', color: modoVisao === 'carga' ? '#1f2937' : '#4b5563' }}
+            >
+              Carga
             </button>
           </div>
 
@@ -239,16 +250,16 @@ export default function App() {
 
       {/* MODOS DE VISUALIZAÇÃO */}
       {modoVisao === 'quadro' ? (
-        /* KANBAN HORIZONTAL - CATEGORIAS LADO A LADO COM SCROLL HORIZONTAL */
-        <div style={{ display: 'flex', gap: '24px', overflowX: 'auto', paddingBottom: '24px', alignItems: 'flex-start' }}>
+        /* KANBAN TRADICIONAL */
+        <div style={{ display: 'flex', gap: '24px', overflowX: 'auto', paddingBottom: '4px' }}>
           {colunas.map((coluna) => (
             <div
               key={coluna}
-              style={{ backgroundColor: '#e5e7eb', padding: '16px', borderRadius: '8px', minWidth: '300px', width: '300px', display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '600px', overflowY: 'auto' }}
+              style={{ backgroundColor: '#e5e7eb', padding: '16px', borderRadius: '8px', minWidth: '300px', width: '300px', display: 'flex', flexDirection: 'column', maxHeight: '600px' }}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, coluna)}
             >
-              <h2 style={{ fontWeight: '700', fontSize: '1.125rem', color: '#374151', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #cbd5e1', paddingBottom: '8px' }}>
+              <h2 style={{ fontWeight: '700', fontSize: '1.125rem', marginBottom: '16px', color: '#374151', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 {coluna}
                 <span style={{ backgroundColor: '#9ca3af', color: '#ffffff', fontSize: '0.75rem', padding: '4px 8px', borderRadius: '9999px' }}>
                   {tasks
@@ -260,7 +271,7 @@ export default function App() {
                 </span>
               </h2>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', overflowY: 'auto', paddingRight: '8px' }}>
                 {tasks
                   .filter((task) => task.status === coluna)
                   .filter(task => task.title.toLowerCase().includes(buscaTitulo.toLowerCase()))
@@ -288,6 +299,10 @@ export default function App() {
                         </div>
                       )}
 
+                      <div style={{ marginTop: '8px', fontSize: '0.75rem', color: '#4b5563' }}>
+                        <strong>Tempo Previsto:</strong> {task.estimatedHours || 0}h
+                      </div>
+
                       <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', fontWeight: '500', color: '#9ca3af' }}>
                         <span style={{ backgroundColor: '#f3f4f6', padding: '4px 8px', borderRadius: '4px' }}>
                           📅 {task.deadline || 'Sem prazo'}
@@ -304,7 +319,7 @@ export default function App() {
             </div>
           ))}
         </div>
-      ) : (
+      ) : modoVisao === 'arvore' ? (
         /* VISUALIZAÇÃO EM ÁRVORE - FLUXOGRAMA COM CAIXAS E LINHAS */
         <div style={{ backgroundColor: '#ffffff', padding: '32px', borderRadius: '12px', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)', border: '1px solid #d1d5db', maxWidth: '800px', margin: '0 auto' }}>
           <h2 style={{ fontSize: '1.125rem', fontWeight: '700', color: '#1f2937', marginBottom: '32px', borderBottom: '1px solid #e5e7eb', paddingBottom: '12px' }}>Árvore de Dependências entre Tarefas</h2>
@@ -445,6 +460,44 @@ export default function App() {
             ))}
           </div>
         </div>
+      ) : (
+        /* VISUALIZAÇÃO DE CARGA DE TRABALHO POR FUNCIONÁRIO */
+        <div style={{ backgroundColor: '#ffffff', padding: '32px', borderRadius: '12px', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)', border: '1px solid #d1d5db', maxWidth: '800px', margin: '0 auto' }}>
+          <h2 style={{ fontSize: '1.125rem', fontWeight: '700', color: '#1f2937', marginBottom: '24px', borderBottom: '1px solid #e5e7eb', paddingBottom: '12px' }}>Carga de Trabalho (Horas Previstas por Colaborador)</h2>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            {mockUsers.map(user => {
+              const tarefasUser = tasks.filter(t => t.assigneeId === user.id && t.status !== 'Concluído');
+              const totalHoras = tarefasUser.reduce((acc, t) => acc + ((t as any).estimatedHours || 0), 0);
+
+              return (
+                <div key={user.id} style={{ border: '1px solid #e5e7eb', padding: '16px', borderRadius: '8px', backgroundColor: '#f9fafb' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', fontWeight: '600', fontSize: '0.875rem' }}>
+                    <span>{user.name}</span>
+                    <span>Total: {totalHoras} Horas</span>
+                  </div>
+
+                  {tarefasUser.length > 0 ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '150px', overflowY: 'auto' }}>
+                      {tarefasUser.map(t => (
+                        <div 
+                          key={t.id} 
+                          onClick={() => abrirParaEditar(t)}
+                          style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 12px', backgroundColor: '#ffffff', border: '1px solid #e5e7eb', borderRadius: '6px', fontSize: '0.75rem', cursor: 'pointer' }}
+                        >
+                          <span style={{ fontWeight: '500' }}>{t.title}</span>
+                          <span style={{ color: '#2563eb', fontWeight: '700' }}>{(t as any).estimatedHours || 0}h</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <span style={{ fontSize: '0.75rem', color: '#9ca3af' }}>Nenhuma tarefa pendente</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       )}
 
       {/* LIXEIRA FLUTUANTE */}
@@ -568,6 +621,18 @@ export default function App() {
                     <option key={user.id} value={user.id}>{user.name}</option>
                   ))}
                 </select>
+              </div>
+
+              {/* Tempo Estimado */}
+              <div>
+                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', color: '#374151' }}>Tempo estipulado (horas)</label>
+                <input
+                  type="number"
+                  min="0"
+                  style={{ marginTop: '4px', width: '100%', borderRadius: '6px', border: '1px solid #d1d5db', padding: '8px', outline: 'none' }}
+                  value={(novaTarefa as any).estimatedHours || 0}
+                  onChange={e => setNovaTarefa({ ...novaTarefa, estimatedHours: Number(e.target.value) } as any)}
+                />
               </div>
 
               {/* Campo para bloquear outras tarefas */}
