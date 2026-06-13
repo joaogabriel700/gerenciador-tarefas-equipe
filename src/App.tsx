@@ -21,7 +21,7 @@ export default function App() {
   }, [tasks]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
+
   const [novaTarefa, setNovaTarefa] = useState<Partial<Task>>({
     title: '', description: '', status: 'A Fazer', assigneeId: '1', deadline: '', priority: 'Média'
   });
@@ -54,9 +54,17 @@ export default function App() {
 
   const handleDragStart = (e: React.DragEvent, taskId: string) => e.dataTransfer.setData('taskId', taskId);
   const handleDragOver = (e: React.DragEvent) => e.preventDefault();
+
   const handleDrop = (e: React.DragEvent, novaColuna: Status) => {
     const idDaTarefa = e.dataTransfer.getData('taskId');
     setTasks(prev => prev.map(task => task.id === idDaTarefa ? { ...task, status: novaColuna } : task));
+  };
+
+  const handleDropDelete = (e: React.DragEvent) => {
+    const idDaTarefa = e.dataTransfer.getData('taskId');
+    if (idDaTarefa) {
+      setTasks(prev => prev.filter(task => task.id !== idDaTarefa));
+    }
   };
 
   const tarefasCriticas = tasks.filter(t => t.priority === 'Alta' && t.status !== 'Concluído').length;
@@ -75,21 +83,25 @@ export default function App() {
   const concluidas = tasks.filter(t => t.status === 'Concluído').length;
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
+    <div className="min-h-screen bg-gray-100 p-8 relative">
+
+      {/* HEADER */}
       <header className="mb-8 flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Quadro de Atividades</h1>
           <p className="text-gray-600">Gestão de produtividade e gargalos</p>
         </div>
-        
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
-        >
-          + Nova Tarefa
-        </button>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors cursor-pointer"
+          >
+            + Nova Tarefa
+          </button>
+        </div>
       </header>
 
+      {/* CARDS DE MÉTRICAS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-white p-6 rounded-lg shadow-sm border-l-4 border-red-500">
           <h3 className="text-gray-500 text-sm font-medium">Tarefas com Prazo Crítico</h3>
@@ -108,6 +120,7 @@ export default function App() {
         </div>
       </div>
 
+      {/* COLUNAS DO KANBAN */}
       <div className="flex gap-6 overflow-x-auto pb-4">
         {colunas.map((coluna) => (
           <div
@@ -141,7 +154,9 @@ export default function App() {
                     </div>
 
                     <div className="mt-3 flex justify-between items-center text-xs font-medium text-gray-400">
-                      <span className="bg-gray-100 px-2 py-1 rounded">📅 {task.deadline || 'Sem prazo'}</span>
+                      <span className="bg-gray-100 px-2 py-1 rounded">
+                        📅 {task.deadline || 'Sem prazo'}
+                      </span>
                       <span className={`${
                         task.priority === 'Alta' ? 'text-red-500' :
                         task.priority === 'Média' ? 'text-yellow-500' : 'text-blue-500'
@@ -156,17 +171,73 @@ export default function App() {
         ))}
       </div>
 
-      {/* JANELA DO MODAL FORÇADA NO ESTILO BRUTO (INLINE CSS) */}
+      {/* LIXEIRA FLUTUANTE */}
+      <div
+        onDragOver={handleDragOver}
+        onDrop={handleDropDelete}
+        title="Arraste e solte um cartão aqui para excluí-lo"
+        style={{
+          position: 'fixed',
+          bottom: '32px',
+          right: '32px',
+          width: '56px',
+          height: '56px',
+          backgroundColor: '#dc2626',
+          borderRadius: '50%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
+          border: '2px solid white',
+          zIndex: 99999,
+        }}
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="white"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6l-1 14H6L5 6"/>
+          <path d="M10 11v6"/>
+          <path d="M14 11v6"/>
+          <path d="M9 6V4h6v2"/>
+        </svg>
+      </div>
+
+      {/* MODAL DE NOVA TAREFA */}
       {isModalOpen && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', 
-          backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 2147483647, 
-          display: 'flex', alignItems: 'center', justifyContent: 'center'
-        }}>
-          <div style={{
-            backgroundColor: 'white', padding: '24px', borderRadius: '8px', 
-            width: '100%', maxWidth: '450px', zIndex: 2147483648
-          }}>
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            zIndex: 2147483647,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: 'white',
+              padding: '24px',
+              borderRadius: '8px',
+              width: '100%',
+              maxWidth: '450px',
+              zIndex: 2147483648,
+            }}
+          >
             <h2 className="mb-4 text-xl font-bold text-gray-800">Criar Nova Tarefa</h2>
 
             <form onSubmit={salvarTarefa} className="flex flex-col gap-4">
@@ -229,7 +300,6 @@ export default function App() {
                     onChange={e => setNovaTarefa({ ...novaTarefa, deadline: e.target.value })}
                   />
                 </div>
-
                 <div className="flex-1">
                   <label className="block text-sm font-medium text-gray-700">Prioridade</label>
                   <select
@@ -263,6 +333,7 @@ export default function App() {
           </div>
         </div>
       )}
+
     </div>
   );
 }
