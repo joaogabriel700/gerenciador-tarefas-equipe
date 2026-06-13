@@ -15,4 +15,6 @@ export interface Task {
   assigneeId: string;
   deadline: string; 
   priority: Priority;
+  blocksTasks?: string[]; 
+  blocksUsers?: string[]; 
 }

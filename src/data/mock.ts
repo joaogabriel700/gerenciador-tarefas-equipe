@@ -14,11 +14,11 @@ export const mockUsers: User[] = [
 ];
 
 export const mockTasks: Task[] = [
-  { id: 't1', title: 'Ajustar layout do site', description: 'Corrigir responsividade na home', status: 'Em Andamento', assigneeId: '2', deadline: '2026-06-14', priority: 'Alta' },
+  { id: 't1', title: 'Ajustar layout do site', description: 'Corrigir responsividade na home', status: 'Em Andamento', assigneeId: '2', deadline: '2026-06-14', priority: 'Alta', blocksTasks: ['t2'] },
   { id: 't2', title: 'Criar banners da campanha', description: 'Banners para redes sociais', status: 'A Fazer', assigneeId: '3', deadline: '2026-06-15', priority: 'Média' },
-  { id: 't3', title: 'Reunião de alinhamento', description: 'Definir metas do trimestre', status: 'Concluído', assigneeId: '1', deadline: '2026-06-10', priority: 'Alta' },
+  { id: 't3', title: 'Reunião de alinhamento', description: 'Definir metas do trimestre', status: 'Concluído', assigneeId: '1', deadline: '2026-06-10', priority: 'Alta', blocksUsers: ['4', '5'] },
   { id: 't4', title: 'Responder chamados', description: 'Zerar a fila do suporte', status: 'Em Andamento', assigneeId: '6', deadline: '2026-06-13', priority: 'Alta' },
-  { id: 't5', title: 'Atualizar planilhas', description: 'Fechamento do mês', status: 'Revisão', assigneeId: '8', deadline: '2026-06-12', priority: 'Média' },
+  { id: 't5', title: 'Atualizar planilhas', description: 'Fechamento do mês', status: 'Revisão', assigneeId: '8', deadline: '2026-06-12', priority: 'Média', blocksTasks: ['t6'], blocksUsers: ['1'] },
   { id: 't6', title: 'Prospecção de clientes', description: 'Ligar para 20 leads', status: 'A Fazer', assigneeId: '5', deadline: '2026-06-16', priority: 'Média' },
   { id: 't7', title: 'Revisar código da API', description: 'Code review', status: 'A Fazer', assigneeId: '7', deadline: '2026-06-14', priority: 'Baixa' },
 ];
