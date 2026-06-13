@@ -21,6 +21,7 @@ export default function App() {
   }, [tasks]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [tarefaEditando, setTarefaEditando] = useState<Task | null>(null);
 
   const [novaTarefa, setNovaTarefa] = useState<Partial<Task>>({
     title: '', description: '', status: 'A Fazer', assigneeId: '1', deadline: '', priority: 'Média'
@@ -33,23 +34,49 @@ export default function App() {
     return user ? user.name : 'Desconhecido';
   };
 
+  const fecharModal = () => {
+    setIsModalOpen(false);
+    setTarefaEditando(null);
+    setNovaTarefa({ title: '', description: '', status: 'A Fazer', assigneeId: '1', deadline: '', priority: 'Média' });
+  };
+
   const salvarTarefa = (e: React.FormEvent) => {
     e.preventDefault();
-    const tarefaCriada: Task = {
-      id: `t${Date.now()}`,
-      title: novaTarefa.title || 'Sem título',
-      description: novaTarefa.description || '',
-      status: novaTarefa.status as Status,
-      assigneeId: novaTarefa.assigneeId || '1',
-      deadline: novaTarefa.deadline || '',
-      priority: novaTarefa.priority as Priority,
-    };
-    setTasks(prev => {
-      const updated = [...prev, tarefaCriada];
-      return updated;
-    });
-    setIsModalOpen(false);
+    
+    if (tarefaEditando) {
+      // Atualiza a tarefa existente mantendo o ID original
+      setTasks(prev => prev.map(task => 
+        task.id === tarefaEditando.id 
+          ? { ...task, ...novaTarefa } as Task 
+          : task
+      ));
+    } else {
+      // Cria uma nova tarefa
+      const tarefaCriada: Task = {
+        id: `t${Date.now()}`,
+        title: novaTarefa.title || 'Sem título',
+        description: novaTarefa.description || '',
+        status: novaTarefa.status as Status,
+        assigneeId: novaTarefa.assigneeId || '1',
+        deadline: novaTarefa.deadline || '',
+        priority: novaTarefa.priority as Priority,
+      };
+      setTasks(prev => [...prev, tarefaCriada]);
+    }
+    
+    fecharModal();
+  };
+
+  const abrirParaCriar = () => {
+    setTarefaEditando(null);
     setNovaTarefa({ title: '', description: '', status: 'A Fazer', assigneeId: '1', deadline: '', priority: 'Média' });
+    setIsModalOpen(true);
+  };
+
+  const abrirParaEditar = (task: Task) => {
+    setTarefaEditando(task);
+    setNovaTarefa(task);
+    setIsModalOpen(true);
   };
 
   const handleDragStart = (e: React.DragEvent, taskId: string) => e.dataTransfer.setData('taskId', taskId);
@@ -93,7 +120,7 @@ export default function App() {
         </div>
         <div className="flex items-center gap-4">
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={abrirParaCriar}
             className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors cursor-pointer"
           >
             + Nova Tarefa
@@ -144,7 +171,8 @@ export default function App() {
                     key={task.id}
                     draggable
                     onDragStart={(e) => handleDragStart(e, task.id)}
-                    className="bg-white p-4 rounded shadow-sm border-l-4 border-blue-500 hover:shadow-md cursor-grab active:cursor-grabbing transition-all"
+                    onClick={() => abrirParaEditar(task)}
+                    className="bg-white p-4 rounded shadow-sm border-l-4 border-blue-500 hover:shadow-md cursor-pointer active:cursor-grabbing transition-all"
                   >
                     <h3 className="font-semibold text-gray-800">{task.title}</h3>
                     <p className="text-sm text-gray-500 mt-1">{task.description}</p>
@@ -212,7 +240,7 @@ export default function App() {
         </svg>
       </div>
 
-      {/* MODAL DE NOVA TAREFA */}
+      {/* MODAL DE TAREFA (CRIAÇÃO OU EDIÇÃO) */}
       {isModalOpen && (
         <div
           style={{
@@ -238,7 +266,9 @@ export default function App() {
               zIndex: 2147483648,
             }}
           >
-            <h2 className="mb-4 text-xl font-bold text-gray-800">Criar Nova Tarefa</h2>
+            <h2 className="mb-4 text-xl font-bold text-gray-800">
+              {tarefaEditando ? 'Editar Tarefa' : 'Criar Nova Tarefa'}
+            </h2>
 
             <form onSubmit={salvarTarefa} className="flex flex-col gap-4">
               <div>
@@ -248,7 +278,7 @@ export default function App() {
                   required
                   placeholder="Ex: Revisar relatório mensal"
                   className="mt-1 w-full rounded border border-gray-300 p-2"
-                  value={novaTarefa.title}
+                  value={novaTarefa.title || ''}
                   onChange={e => setNovaTarefa({ ...novaTarefa, title: e.target.value })}
                 />
               </div>
@@ -259,16 +289,16 @@ export default function App() {
                   rows={3}
                   placeholder="Descreva o que precisa ser feito..."
                   className="mt-1 w-full resize-none rounded border border-gray-300 p-2"
-                  value={novaTarefa.description}
+                  value={novaTarefa.description || ''}
                   onChange={e => setNovaTarefa({ ...novaTarefa, description: e.target.value })}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700">Coluna Inicial</label>
+                <label className="block text-sm font-medium text-gray-700">Coluna Inicial / Status</label>
                 <select
                   className="mt-1 w-full rounded border border-gray-300 p-2"
-                  value={novaTarefa.status}
+                  value={novaTarefa.status || 'A Fazer'}
                   onChange={e => setNovaTarefa({ ...novaTarefa, status: e.target.value as Status })}
                 >
                   {colunas.map(col => (
@@ -281,7 +311,7 @@ export default function App() {
                 <label className="block text-sm font-medium text-gray-700">Responsável</label>
                 <select
                   className="mt-1 w-full rounded border border-gray-300 p-2"
-                  value={novaTarefa.assigneeId}
+                  value={novaTarefa.assigneeId || '1'}
                   onChange={e => setNovaTarefa({ ...novaTarefa, assigneeId: e.target.value })}
                 >
                   {mockUsers.map(user => (
@@ -296,7 +326,7 @@ export default function App() {
                   <input
                     type="date"
                     className="mt-1 w-full rounded border border-gray-300 p-2 text-sm"
-                    value={novaTarefa.deadline}
+                    value={novaTarefa.deadline || ''}
                     onChange={e => setNovaTarefa({ ...novaTarefa, deadline: e.target.value })}
                   />
                 </div>
@@ -304,7 +334,7 @@ export default function App() {
                   <label className="block text-sm font-medium text-gray-700">Prioridade</label>
                   <select
                     className="mt-1 w-full rounded border border-gray-300 p-2 text-sm"
-                    value={novaTarefa.priority}
+                    value={novaTarefa.priority || 'Média'}
                     onChange={e => setNovaTarefa({ ...novaTarefa, priority: e.target.value as Priority })}
                   >
                     <option value="Baixa">Baixa</option>
@@ -317,7 +347,7 @@ export default function App() {
               <div className="mt-4 flex justify-end gap-2">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={fecharModal}
                   className="rounded px-4 py-2 text-gray-600 hover:bg-gray-100"
                 >
                   Cancelar
@@ -326,7 +356,7 @@ export default function App() {
                   type="submit"
                   className="rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
                 >
-                  Salvar Tarefa
+                  {tarefaEditando ? 'Salvar Alterações' : 'Salvar Tarefa'}
                 </button>
               </div>
             </form>
