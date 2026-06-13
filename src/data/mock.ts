@@ -151,13 +151,13 @@ export const mockTasks: Task[] = [
     priority: 'Baixa',
     estimatedHours: 3
   },
-  // --- TAREFAS ADICIONAIS PARA CRIAR O EQUILÍBRIO INTERMEDIÁRIO (AMARELO) ---
+  
   {
     id: 't14',
     title: 'Mapeamento de User Stories',
     description: 'Documentar fluxos secundários identificados no refinamento',
     status: 'A Fazer',
-    assigneeId: '9', // Adiciona +6h ao Lucas Mendes (Total 10h) -> Carga Normal
+    assigneeId: '9', 
     deadline: '2026-06-20',
     priority: 'Média',
     estimatedHours: 6
@@ -167,7 +167,7 @@ export const mockTasks: Task[] = [
     title: 'Conciliação Bancária Trimestral',
     description: 'Auditoria de entradas e saídas pendentes da plataforma externa',
     status: 'A Fazer',
-    assigneeId: '8', // Adiciona +5h à Camila Rocha (Total 10h) -> Carga Normal
+    assigneeId: '8', 
     deadline: '2026-06-19',
     priority: 'Média',
     estimatedHours: 5
