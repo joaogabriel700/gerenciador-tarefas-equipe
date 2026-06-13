@@ -6,12 +6,11 @@ export default function App() {
   const [tasks, setTasks] = useState<Task[]>(mockTasks);
   const [isModalOpen, setIsModalOpen] = useState(false);
   
-  // Estado que guarda as informações que o usuário digita no modal
   const [novaTarefa, setNovaTarefa] = useState<Partial<Task>>({
     title: '',
     description: '',
     status: 'A Fazer',
-    assigneeId: '1', // Puxa o Ricardo por padrão
+    assigneeId: '1', 
     deadline: '',
     priority: 'Média'
   });
@@ -23,12 +22,11 @@ export default function App() {
     return user ? user.name : 'Desconhecido';
   };
 
-  // Função que roda quando clicamos em "Salvar" no modal
   const salvarTarefa = (e: React.FormEvent) => {
     e.preventDefault();
     
     const tarefaCriada: Task = {
-      id: `t${Date.now()}`, // Gera um ID falso baseado no horário
+      id: `t${Date.now()}`, 
       title: novaTarefa.title || 'Sem título',
       description: novaTarefa.description || '',
       status: novaTarefa.status as Status,
@@ -37,11 +35,33 @@ export default function App() {
       priority: novaTarefa.priority as Priority,
     };
 
-    setTasks([...tasks, tarefaCriada]); // Adiciona a nova tarefa na lista existente
-    setIsModalOpen(false); // Fecha o modal
-    
-    // Limpa o formulário para a próxima vez
+    setTasks([...tasks, tarefaCriada]); 
+    setIsModalOpen(false); 
     setNovaTarefa({ title: '', description: '', status: 'A Fazer', assigneeId: '1', deadline: '', priority: 'Média' }); 
+  };
+
+  // --- LÓGICA DE DRAG AND DROP (ARRASTAR E SOLTAR) ---
+  
+  // 1. Guarda o ID da tarefa que está sendo arrastada
+  const handleDragStart = (e: React.DragEvent, taskId: string) => {
+    e.dataTransfer.setData('taskId', taskId);
+  };
+
+  // 2. Permite que a coluna receba o item (por padrão o HTML bloqueia isso)
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  // 3. Atualiza o status da tarefa quando ela é solta na nova coluna
+  const handleDrop = (e: React.DragEvent, novaColuna: Status) => {
+    const idDaTarefa = e.dataTransfer.getData('taskId');
+    
+    setTasks(tasks.map(task => {
+      if (task.id === idDaTarefa) {
+        return { ...task, status: novaColuna };
+      }
+      return task;
+    }));
   };
 
   // --- CÁLCULO DOS KPIs ---
@@ -69,7 +89,6 @@ export default function App() {
           <p className="text-gray-600">Gestão de produtividade e gargalos</p>
         </div>
         
-        {/* BOTÃO NOVA TAREFA */}
         <button 
           onClick={() => setIsModalOpen(true)}
           className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors"
@@ -99,22 +118,32 @@ export default function App() {
         </div>
       </div>
 
-      {/* KANBAN */}
+      {/* QUADRO / COLUNAS */}
       <div className="flex gap-6 overflow-x-auto pb-4">
         {colunas.map((coluna) => (
-          <div key={coluna} className="bg-gray-200 p-4 rounded-lg min-w-[300px] w-[300px] flex flex-col max-h-[600px]">
+          <div 
+            key={coluna} 
+            className="bg-gray-200 p-4 rounded-lg min-w-[300px] w-[300px] flex flex-col max-h-[600px] transition-colors hover:bg-gray-300"
+            onDragOver={handleDragOver}
+            onDrop={(e) => handleDrop(e, coluna)}
+          >
             <h2 className="font-bold text-lg mb-4 text-gray-700 flex justify-between items-center">
               {coluna}
-              <span className="bg-gray-300 text-gray-700 text-xs py-1 px-2 rounded-full">
+              <span className="bg-gray-400 text-white text-xs py-1 px-2 rounded-full">
                 {tasks.filter(t => t.status === coluna).length}
               </span>
             </h2>
             
-            <div className="flex flex-col gap-3 overflow-y-auto pr-2 custom-scrollbar">
+            <div className="flex flex-col gap-3 overflow-y-auto pr-2 custom-scrollbar min-h-[100px]">
               {tasks
                 .filter((task) => task.status === coluna)
                 .map((task) => (
-                  <div key={task.id} className="bg-white p-4 rounded shadow-sm border-l-4 border-blue-500 hover:shadow-md transition-shadow">
+                  <div 
+                    key={task.id} 
+                    draggable // Deixa o card arrastável
+                    onDragStart={(e) => handleDragStart(e, task.id)}
+                    className="bg-white p-4 rounded shadow-sm border-l-4 border-blue-500 hover:shadow-md cursor-grab active:cursor-grabbing transition-all"
+                  >
                     <h3 className="font-semibold text-gray-800">{task.title}</h3>
                     <p className="text-sm text-gray-500 mt-1">{task.description}</p>
                     
