@@ -17,4 +17,5 @@ export interface Task {
   priority: Priority;
   blocksTasks?: string[]; 
   blocksUsers?: string[]; 
+  estimatedHours?: number; 
 }

@@ -33,6 +33,9 @@ export default function App() {
   const [filtroResponsavel, setFiltroResponsavel] = useState('Todos');
   const [modoVisao, setModoVisao] = useState<'quadro' | 'arvore' | 'carga'>('quadro');
 
+  // Controla se o filtro de tarefas críticas está ativo
+  const [apenasCriticasAtivo, setApenasCriticasAtivo] = useState(false);
+
   const colunas: Status[] = ['A Fazer', 'Em Andamento', 'Revisão', 'Concluído'];
 
   const getUserName = (id: string) => {
@@ -88,7 +91,7 @@ export default function App() {
   const handleDragStart = (e: React.DragEvent, taskId: string) => e.dataTransfer.setData('taskId', taskId);
   const handleDragOver = (e: React.DragEvent) => e.preventDefault();
 
-  // LÓGICA DE DRAG & DROP COM VALIDAÇÃO DE BLOQUEIO DE TAREFAS
+  // LÓGICA DE DRAG & DROP COM VALIDAÇÃO DE TAREFAS
   const handleDrop = (e: React.DragEvent, novaColuna: Status) => {
     const idDaTarefa = e.dataTransfer.getData('taskId');
     const tarefaMovida = tasks.find(t => t.id === idDaTarefa);
@@ -168,6 +171,15 @@ export default function App() {
   const mediaGeralHoras = cargasPorUsuario.reduce((acc, item) => acc + item.totalHoras, 0) / mockUsers.length || 0;
   const cargasRankeadas = [...cargasPorUsuario].sort((a, b) => b.totalHoras - a.totalHoras);
 
+  // Filtra a lista com base em todos os inputs + card de prazo crítico
+  const filtrarTarefas = (lista: Task[]) => {
+    return lista
+      .filter(t => t.title.toLowerCase().includes(buscaTitulo.toLowerCase()))
+      .filter(t => filtroPrioridade === 'Todas' || t.priority === filtroPrioridade)
+      .filter(t => filtroResponsavel === 'Todos' || t.assigneeId === filtroResponsavel)
+      .filter(t => !apenasCriticasAtivo || (t.priority === 'Alta' && t.status !== 'Concluído'));
+  };
+
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f3f4f6', padding: '32px', fontFamily: 'sans-serif', boxSizing: 'border-box' }}>
       
@@ -214,11 +226,42 @@ export default function App() {
 
         {/* CARDS DE MÉTRICAS */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px', marginBottom: '32px' }}>
-          <div style={{ backgroundColor: '#ffffff', padding: '24px', borderRadius: '8px', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)', borderLeft: '4px solid #ef4444' }}>
-            <h3 style={{ color: '#6b7280', fontSize: '0.875rem', fontWeight: '500', margin: 0 }}>Tarefas com Prazo Crítico</h3>
-            <p style={{ fontSize: '1.875rem', fontWeight: '700', color: '#1f2937', marginTop: '8px', marginBottom: 0 }}>{tarefasCriticas}</p>
-            <p style={{ fontSize: '0.75rem', color: '#ef4444', marginTop: '4px', marginBottom: 0 }}>Risco de estouro de prazo</p>
+          
+          {/* CARD DE PRAZO CRÍTICO INTERATIVO COM AVISO SUBTIL */}
+          <div 
+            onClick={() => setApenasCriticasAtivo(!apenasCriticasAtivo)}
+            style={{ 
+              backgroundColor: '#ffffff', 
+              padding: '24px', 
+              borderRadius: '8px', 
+              boxShadow: apenasCriticasAtivo ? '0 4px 12px rgba(239, 68, 68, 0.15)' : '0 1px 2px 0 rgba(0, 0, 0, 0.05)', 
+              borderLeft: '4px solid #ef4444',
+              cursor: 'pointer',
+              border: apenasCriticasAtivo ? '2px solid #ef4444' : 'none',
+              borderLeftWidth: '4px',
+              transform: apenasCriticasAtivo ? 'scale(1.02)' : 'scale(1)',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between'
+            }}
+          >
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ color: '#6b7280', fontSize: '0.875rem', fontWeight: '500', margin: 0 }}>
+                  Tarefas com Prazo Crítico
+                </h3>
+                <span style={{ fontSize: '0.75rem', color: '#9ca3af', fontWeight: 'normal' }}>
+                  {apenasCriticasAtivo ? '(Clique para limpar filtro)' : '(Clique para filtrar)'}
+                </span>
+              </div>
+              <p style={{ fontSize: '1.875rem', fontWeight: '700', color: '#1f2937', marginTop: '8px', marginBottom: 0 }}>{tarefasCriticas}</p>
+            </div>
+            <p style={{ fontSize: '0.75rem', color: '#ef4444', marginTop: '4px', marginBottom: 0, fontWeight: apenasCriticasAtivo ? '600' : 'normal' }}>
+              {apenasCriticasAtivo ? '🔎 Exibindo apenas criticidades no quadro' : 'Risco de estouro de prazo'}
+            </p>
           </div>
+
           <div style={{ backgroundColor: '#ffffff', padding: '24px', borderRadius: '8px', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)', borderLeft: '4px solid #eab308' }}>
             <h3 style={{ color: '#6b7280', fontSize: '0.875rem', fontWeight: '500', margin: 0 }}>Maior Sobrecarga</h3>
             <p style={{ fontSize: '1.25rem', fontWeight: '700', color: '#1f2937', marginTop: '8px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 0 }}>{sobrecargaTexto}</p>
@@ -282,56 +325,46 @@ export default function App() {
                 <h2 style={{ fontWeight: '700', fontSize: '1.125rem', color: '#374151', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #cbd5e1', paddingBottom: '8px', margin: 0 }}>
                   {coluna}
                   <span style={{ backgroundColor: '#9ca3af', color: '#ffffff', fontSize: '0.75rem', padding: '4px 8px', borderRadius: '9999px' }}>
-                    {tasks
-                      .filter(t => t.status === coluna)
-                      .filter(t => t.title.toLowerCase().includes(buscaTitulo.toLowerCase()))
-                      .filter(t => filtroPrioridade === 'Todas' || t.priority === filtroPrioridade)
-                      .filter(t => filtroResponsavel === 'Todos' || t.assigneeId === filtroResponsavel)
-                      .length}
+                    {filtrarTarefas(tasks.filter(t => t.status === coluna)).length}
                   </span>
                 </h2>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {tasks
-                    .filter((task) => task.status === coluna)
-                    .filter(task => task.title.toLowerCase().includes(buscaTitulo.toLowerCase()))
-                    .filter(task => filtroPrioridade === 'Todas' || task.priority === filtroPrioridade)
-                    .filter(task => filtroResponsavel === 'Todos' || task.assigneeId === filtroResponsavel)
-                    .map((task) => (
-                      <div
-                        key={task.id}
-                        draggable
-                        onDragStart={(e) => handleDragStart(e, task.id)}
-                        onClick={() => abrirParaEditar(task)}
-                        style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '6px', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)', borderLeft: '4px solid #3b82f6', cursor: 'pointer', transition: 'all 0.2s' }}
-                      >
-                        <h3 style={{ fontWeight: '600', color: '#1f2937', margin: 0 }}>{task.title}</h3>
-                        <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '4px', marginBottom: 0 }}>{task.description}</p>
+                  {filtrarTarefas(tasks.filter((task) => task.status === coluna)).map((task) => (
+                    <div
+                      key={task.id}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, task.id)}
+                      onClick={() => abrirParaEditar(task)}
+                      style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '6px', boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)', borderLeft: '4px solid #3b82f6', cursor: 'pointer', transition: 'all 0.2s' }}
+                    >
+                      <h3 style={{ fontWeight: '600', color: '#1f2937', margin: 0 }}>{task.title}</h3>
+                      <p style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '4px', marginBottom: 0 }}>{task.description}</p>
 
-                        <div style={{ marginTop: '12px', fontSize: '0.75rem', color: '#4b5563' }}>
-                          <strong>Responsável:</strong> {getUserName(task.assigneeId)}
-                        </div>
-
-                        {task.blocksTasks && task.blocksTasks.length > 0 && (
-                          <div style={{ marginTop: '8px', padding: '8px', backgroundColor: '#fee2e2', border: '1px solid #fecaca', borderRadius: '4px', fontSize: '0.75rem', color: '#dc2626', fontWeight: '500' }}>
-                            ⚠️ Bloqueia {task.blocksTasks.length} tarefa(s)
-                          </div>
-                        )}
-
-                        <div style={{ marginTop: '8px', fontSize: '0.75rem', color: '#4b5563' }}>
-                          <strong>Tempo Previsto:</strong> {(task as any).estimatedHours || 0}h
-                        </div>
-
-                        <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', fontWeight: '500', color: '#9ca3af' }}>
-                          <span style={{ backgroundColor: '#f3f4f6', padding: '4px 8px', borderRadius: '4px' }}>
-                            📅 {task.deadline || 'Sem prazo'}
-                          </span>
-                          <span style={{ color: task.priority === 'Alta' ? '#ef4444' : task.priority === 'Média' ? '#eab308' : '#3b82f6' }}>
-                            {task.priority}
-                          </span>
-                        </div>
+                      <div style={{ marginTop: '12px', fontSize: '0.75rem', color: '#4b5563' }}>
+                        <strong>Responsável:</strong> {getUserName(task.assigneeId)}
                       </div>
-                    ))}
+
+                      {task.blocksTasks && task.blocksTasks.length > 0 && (
+                        <div style={{ marginTop: '8px', padding: '8px', backgroundColor: '#fee2e2', border: '1px solid #fecaca', borderRadius: '4px', fontSize: '0.75rem', color: '#dc2626', fontWeight: '500' }}>
+                          ⚠️ Bloqueia {task.blocksTasks.length} tarefa(s)
+                        </div>
+                      )}
+
+                      <div style={{ marginTop: '8px', fontSize: '0.75rem', color: '#4b5563' }}>
+                        <strong>Tempo Previsto:</strong> {(task as any).estimatedHours || 0}h
+                      </div>
+
+                      <div style={{ marginTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.75rem', fontWeight: '500', color: '#9ca3af' }}>
+                        <span style={{ backgroundColor: '#f3f4f6', padding: '4px 8px', borderRadius: '4px' }}>
+                          📅 {task.deadline || 'Sem prazo'}
+                        </span>
+                        <span style={{ color: task.priority === 'Alta' ? '#ef4444' : task.priority === 'Média' ? '#eab308' : '#3b82f6' }}>
+                          {task.priority}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}
@@ -342,7 +375,7 @@ export default function App() {
             <h2 style={{ fontSize: '1.125rem', fontWeight: '700', color: '#1f2937', marginBottom: '32px', borderBottom: '1px solid #e5e7eb', paddingBottom: '12px', margin: 0 }}>Árvore de Dependências entre Tarefas</h2>
             
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '32px', width: '100%' }}>
-              {tasks.map(task => (
+              {filtrarTarefas(tasks).map(task => (
                 <div key={task.id} style={{ position: 'relative', display: 'flex', flexDirection: 'column', width: '100%' }}>
                   
                   {/* CAIXA DA TAREFA PRINCIPAL (BLOQUEADORA) */}
@@ -434,6 +467,9 @@ export default function App() {
                   }
                 }
 
+                // Filtra as tarefas exibidas dentro de cada funcionário também
+                const tarefasFiltradasUser = filtrarTarefas(item.tarefasUser);
+
                 return (
                   <div 
                     key={item.user.id} 
@@ -452,9 +488,9 @@ export default function App() {
                       </span>
                     </div>
 
-                    {item.tarefasUser.length > 0 ? (
+                    {tarefasFiltradasUser.length > 0 ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto', flex: 1, paddingRight: '2px' }}>
-                        {item.tarefasUser.map(t => (
+                        {tarefasFiltradasUser.map(t => (
                           <div 
                             key={t.id} 
                             draggable
@@ -642,6 +678,7 @@ export default function App() {
   );
 }
 
+// Retorna objeto fallback seguro para a tipagem
 function TarefaEditandoObj(val: any) {
   return val || {};
 }
