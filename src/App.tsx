@@ -239,16 +239,16 @@ export default function App() {
 
       {/* MODOS DE VISUALIZAÇÃO */}
       {modoVisao === 'quadro' ? (
-        /* KANBAN TRADICIONAL */
-        <div style={{ display: 'flex', gap: '24px', overflowX: 'auto', paddingBottom: '16px' }}>
+        /* KANBAN HORIZONTAL - CATEGORIAS LADO A LADO COM SCROLL HORIZONTAL */
+        <div style={{ display: 'flex', gap: '24px', overflowX: 'auto', paddingBottom: '24px', alignItems: 'flex-start' }}>
           {colunas.map((coluna) => (
             <div
               key={coluna}
-              style={{ backgroundColor: '#e5e7eb', padding: '16px', borderRadius: '8px', minWidth: '300px', width: '300px', display: 'flex', flexDirection: 'col', maxHeight: '600px' }}
+              style={{ backgroundColor: '#e5e7eb', padding: '16px', borderRadius: '8px', minWidth: '300px', width: '300px', display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '600px', overflowY: 'auto' }}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, coluna)}
             >
-              <h2 style={{ fontWeight: '700', fontSize: '1.125rem', marginBottom: '16px', color: '#374151', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h2 style={{ fontWeight: '700', fontSize: '1.125rem', color: '#374151', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #cbd5e1', paddingBottom: '8px' }}>
                 {coluna}
                 <span style={{ backgroundColor: '#9ca3af', color: '#ffffff', fontSize: '0.75rem', padding: '4px 8px', borderRadius: '9999px' }}>
                   {tasks
@@ -260,7 +260,7 @@ export default function App() {
                 </span>
               </h2>
 
-              <div style={{ display: 'flex', flexDirection: 'col', gap: '12px', overflowY: 'auto', paddingRight: '8px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {tasks
                   .filter((task) => task.status === coluna)
                   .filter(task => task.title.toLowerCase().includes(buscaTitulo.toLowerCase()))
