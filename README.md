@@ -68,6 +68,8 @@ A ferramenta possui as seguintes funcionalidades:
 
 Os indicadores foram escolhidos com foco em decisão. A ideia não é mostrar números apenas por mostrar, mas oferecer sinais que ajudem Ricardo a agir.
 
+Além de exibir os números, os cards de **Gargalos Ativos** e **Alertas de Prazo** podem ser clicados para filtrar a visualização e mostrar as tarefas relacionadas ao indicador.
+
 ### Gargalos Ativos
 
 Este indicador mede quantas tarefas de alta prioridade estão em etapas intermediárias do fluxo, como **Em Andamento** ou **Revisão**.
