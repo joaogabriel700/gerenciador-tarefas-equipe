@@ -92,27 +92,22 @@ Além do indicador geral de desbalanceamento, a visão de carga mostra o total d
 
 Essa visão ajuda Ricardo a decidir para quem atribuir novas tarefas e quais colaboradores podem estar sobrecarregados ou com capacidade disponível.
 
-## Como Rodar
+## Como Rodar Localmente
 
-Se for a primeira vez rodando o projeto, instale as dependências:
+Com Node.js instalado, instale as dependências e inicie o projeto:
 
 ```bash
 npm install
-```
-
-Depois, inicie a aplicação:
-
-```bash
 npm run dev
 ```
 
-Acesse no navegador o endereço exibido no terminal, normalmente:
+Acesse no navegador o endereço exibido no terminal pelo Vite, normalmente:
 
 ```txt
 http://localhost:5173
 ```
 
-Se as dependências já estiverem instaladas e a pasta do projeto já estiver aberta no terminal, basta executar:
+Se as dependências já estiverem instaladas e a pasta do projeto já estiver aberta no terminal, basta rodar:
 
 ```bash
 npm run dev
@@ -123,32 +118,6 @@ Para validar a versão de produção:
 ```bash
 npm run build
 ```
-
-## Scripts Disponíveis
-
-```bash
-npm run dev
-```
-
-Inicia o projeto em ambiente de desenvolvimento.
-
-```bash
-npm run build
-```
-
-Gera a versão de produção do projeto.
-
-```bash
-npm run lint
-```
-
-Executa a verificação de lint do código.
-
-```bash
-npm run preview
-```
-
-Executa uma prévia local da versão de produção.
 
 ## Dados de Exemplo
 
