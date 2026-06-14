@@ -13,9 +13,9 @@ export interface Task {
   description: string;
   status: Status;
   assigneeId: string;
-  deadline: string; 
+  deadline: string;
   priority: Priority;
-  blocksTasks?: string[]; 
-  blocksUsers?: string[]; 
-  estimatedHours?: number; 
+  blocksTasks?: string[];
+  blocksUsers?: string[];
+  estimatedHours?: number;
 }
