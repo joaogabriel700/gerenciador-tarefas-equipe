@@ -113,12 +113,6 @@ Se as dependências já estiverem instaladas e a pasta do projeto já estiver ab
 npm run dev
 ```
 
-Para validar a versão de produção:
-
-```bash
-npm run build
-```
-
 ## Dados de Exemplo
 
 O projeto já vem com dados fictícios para demonstrar a solução funcionando desde o primeiro acesso.
